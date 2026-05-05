@@ -1,0 +1,133 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+// backend/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id            String   @id @default(uuid())
+  nombre        String
+  email         String   @unique
+  passwordHash  String
+  rol           Rol      @default(USUARIO)
+  puntosTotales Int      @default(0)
+  rachaActual   Int      @default(0)
+  rachaMaxima   Int      @default(0)
+  ultimaSesion  DateTime?
+  creadoEn      DateTime @default(now())
+
+  progreso  ProgresoUsuario[]
+  rachas    Racha[]
+  ranking   Ranking[]
+}
+
+enum Rol {
+  USUARIO
+  ADMIN
+}
+
+model Modulo {
+  id          String    @id @default(uuid())
+  titulo      String
+  descripcion String
+  nivel       Nivel
+  orden       Int
+  activo      Boolean   @default(true)
+
+  lecciones   Leccion[]
+}
+
+enum Nivel {
+  BASICO
+  INTERMEDIO
+  AVANZADO
+}
+
+model Leccion {
+  id               String   @id @default(uuid())
+  moduloId         String
+  titulo           String
+  tipo             TipoLeccion
+  orden            Int
+  puntosRecompensa Int      @default(10)
+  activo           Boolean  @default(true)
+
+  modulo    Modulo            @relation(fields: [moduloId], references: [id])
+  ejercicios Ejercicio[]
+  progreso   ProgresoUsuario[]
+}
+
+enum TipoLeccion {
+  TEORIA
+  PRACTICA
+  CAMARA
+}
+
+model Ejercicio {
+  id                String        @id @default(uuid())
+  leccionId         String
+  pregunta          String
+  tipo              TipoEjercicio
+  respuestaCorrecta String
+  imagen            String?
+  video             String?
+  orden             Int
+
+  leccion   Leccion @relation(fields: [leccionId], references: [id])
+}
+
+enum TipoEjercicio {
+  OPCION_MULTIPLE
+  VERDADERO_FALSO
+  CAMARA
+}
+
+model ProgresoUsuario {
+  id           String    @id @default(uuid())
+  usuarioId    String
+  leccionId    String
+  completado   Boolean   @default(false)
+  intentos     Int       @default(0)
+  completadoEn DateTime?
+
+  usuario  Usuario @relation(fields: [usuarioId], references: [id])
+  leccion  Leccion @relation(fields: [leccionId], references: [id])
+
+  @@unique([usuarioId, leccionId])
+}
+
+model Racha {
+  id         String   @id @default(uuid())
+  usuarioId  String
+  fecha      DateTime @default(now())
+  completado Boolean  @default(false)
+
+  usuario  Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@unique([usuarioId, fecha])
+}
+
+model Ranking {
+  id        String   @id @default(uuid())
+  usuarioId String
+  puntos    Int      @default(0)
+  posicion  Int      @default(0)
+  periodo   Periodo
+
+  usuario  Usuario @relation(fields: [usuarioId], references: [id])
+}
+
+enum Periodo {
+  SEMANAL
+  GLOBAL
+}
