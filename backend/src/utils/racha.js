@@ -1,11 +1,7 @@
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
-const { PrismaClient } = require('@prisma/client')
-const prisma = new PrismaClient()
-
 const actualizarRacha = async (usuarioId) => {
-
   const hoy = new Date()
   hoy.setHours(0, 0, 0, 0)
 
@@ -27,34 +23,17 @@ const actualizarRacha = async (usuarioId) => {
   let nuevaRacha = 1
 
   if (ultimaSesion) {
-
     if (ultimaSesion.getTime() === hoy.getTime()) {
-
       nuevaRacha = usuario.rachaActual
-
     } else if (ultimaSesion.getTime() === ayer.getTime()) {
-
       nuevaRacha = usuario.rachaActual + 1
-
     }
-
   }
 
   await prisma.racha.upsert({
-    where: {
-      usuarioId_fecha: {
-        usuarioId,
-        fecha: hoy
-      }
-    },
-    update: {
-      completado: true
-    },
-    create: {
-      usuarioId,
-      fecha: hoy,
-      completado: true
-    }
+    where: { usuarioId_fecha: { usuarioId, fecha: hoy } },
+    update: { completado: true },
+    create: { usuarioId, fecha: hoy, completado: true }
   })
 
   await prisma.usuario.update({
@@ -65,9 +44,6 @@ const actualizarRacha = async (usuarioId) => {
       ultimaSesion: hoy
     }
   })
-
 }
-
-module.exports = { actualizarRacha }
 
 module.exports = { actualizarRacha }
