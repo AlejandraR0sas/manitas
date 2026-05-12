@@ -13,6 +13,8 @@ export default function Leccion() {
   const [ejercicioActual, setEjercicioActual] = useState(0)
   const [puntos, setPuntos] = useState(0)
   const [videoActual, setVideoActual] = useState(0)
+  const [completadaAntes, setCompletadaAntes] = useState(false)
+const [mensajeFinal, setMensajeFinal] = useState('')
 
 useEffect(() => {
   const cargar = async () => {
@@ -30,16 +32,21 @@ useEffect(() => {
   cargar()
 }, [id])
 
-  const handleCompletar = async () => {
-    try {
-      const res = await progresoService.completar(id)
-      setPuntos(res.data.puntos || leccion.puntosRecompensa)
-      await refrescarUsuario()
-      setFase('completado')
-    } catch {
-      console.error('Error al completar lección')
-    }
+ const handleCompletar = async () => {
+  try {
+    const res = await progresoService.completar(id)
+
+    setPuntos(res.data.puntos ?? 0)
+    setCompletadaAntes(res.data.completadaAntes)
+    setMensajeFinal(res.data.mensaje)
+
+    await refrescarUsuario()
+
+    setFase('completado')
+  } catch {
+    console.error('Error al completar lección')
   }
+}
 
   const siguienteEjercicio = () => {
     const siguiente = ejercicioActual + 1
@@ -254,7 +261,15 @@ useEffect(() => {
           <div className="bg-white rounded-2xl shadow-md p-8 text-center border border-gray-100">
             <p className="text-6xl mb-4">🎉</p>
             <h1 className="text-2xl font-bold text-gray-800 mb-2">¡Lección completada!</h1>
-            <p className="text-gray-400 mb-6">Ganaste <span className="text-green-600 font-bold">{puntos} puntos</span> y mantuviste tu racha 🔥</p>
+            {completadaAntes ? (
+  <p className="text-gray-400 mb-6">
+    {mensajeFinal}
+  </p>
+) : (
+  <p className="text-gray-400 mb-6">
+    Ganaste <span className="text-green-600 font-bold">{puntos} puntos</span> y mantuviste tu racha 🔥
+  </p>
+)}
             <div className="flex gap-3">
               <button
                 onClick={() => navigate('/modulos')}

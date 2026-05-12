@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { progresoService } from '../services/api'
 
 const LETRAS_PRACTICA = ['A', 'B', 'C', 'D', 'L', 'O', 'V', 'W']
 
@@ -13,6 +14,8 @@ export default function Camara() {
   const [resultado, setResultado] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [correctas, setCorrectas] = useState(0)
+  const [puntosGanados, setPuntosGanados] = useState(0)
+const [mensajeFinal, setMensajeFinal] = useState('')
   const [fase, setFase] = useState('practica')
   const [textoTraducido, setTextoTraducido] = useState('')
   const [ultimaLetraHablada, setUltimaLetraHablada] = useState(null)
@@ -148,7 +151,8 @@ export default function Camara() {
     if (letraActual + 1 < LETRAS_PRACTICA.length) {
       setLetraActual(letraActual + 1)
     } else {
-      setFase('completado')
+        completarPractica()
+  setFase('completado')
     }
   }
 
@@ -161,6 +165,20 @@ export default function Camara() {
       ultimaLetraRef.current = null
     }
   }
+  const completarPractica = async () => {
+  try {
+
+    const LECCION_CAMARA_ID = '5a6040f0-d1a5-43a0-8e24-b8f2a92fccc1'
+
+    const res = await progresoService.completar(LECCION_CAMARA_ID)
+
+    setPuntosGanados(res.data.puntos ?? 0)
+    setMensajeFinal(res.data.mensaje)
+
+  } catch (error) {
+    console.error('Error completando práctica:', error)
+  }
+}
 
   if (fase === 'completado') return (
     <div className="min-h-screen pb-24" style={{ background: '#f0faf0' }}>
@@ -317,33 +335,98 @@ export default function Camara() {
   )
 }
 
-function detectarLetra(landmarks) {
-  const dedos = obtenerDedosExtendidos(landmarks)
+function detectarLetra(landmarks, mano = 'Right') {
+  const dedos = obtenerDedosExtendidos(landmarks, mano)
+
   const [pulgar, indice, medio, anular, menique] = dedos
 
-  if (pulgar && !indice && !medio && !anular && !menique) return 'A'
-  if (!pulgar && indice && medio && anular && menique) return 'B'
-  if (!pulgar && !indice && !medio && !anular && !menique) {
+  // A → puño cerrado con pulgar al lado
+  if (
+    pulgar &&
+    !indice &&
+    !medio &&
+    !anular &&
+    !menique
+  ) return 'A'
+
+  // B → dedos arriba y pulgar doblado
+  if (
+    !pulgar &&
+    indice &&
+    medio &&
+    anular &&
+    menique
+  ) return 'B'
+
+  // C / O
+  if (
+    !indice &&
+    !medio &&
+    !anular &&
+    !menique
+  ) {
     const distPulgarIndice = Math.hypot(
       landmarks[4].x - landmarks[8].x,
       landmarks[4].y - landmarks[8].y
     )
-    if (distPulgarIndice < 0.12) return 'O'
+
+    if (distPulgarIndice < 0.10) return 'O'
     return 'C'
   }
-  if (!pulgar && indice && !medio && !anular && !menique) return 'D'
-  if (pulgar && indice && !medio && !anular && !menique) return 'L'
-  if (!pulgar && indice && medio && !anular && !menique) return 'V'
-  if (!pulgar && indice && medio && anular && !menique) return 'W'
+
+  // D
+  if (
+    !pulgar &&
+    indice &&
+    !medio &&
+    !anular &&
+    !menique
+  ) return 'D'
+
+  // L
+  if (
+    pulgar &&
+    indice &&
+    !medio &&
+    !anular &&
+    !menique
+  ) return 'L'
+
+  // V
+  if (
+    !pulgar &&
+    indice &&
+    medio &&
+    !anular &&
+    !menique
+  ) return 'V'
+
+  // W
+  if (
+    !pulgar &&
+    indice &&
+    medio &&
+    anular &&
+    !menique
+  ) return 'W'
 
   return null
 }
 
-function obtenerDedosExtendidos(landmarks) {
-  const pulgarExtendido = landmarks[4].x < landmarks[3].x
+function obtenerDedosExtendidos(landmarks, mano = 'Right') {
+
+ 
+  const esDerecha = mano === 'Left'
+
+  const pulgarExtendido = esDerecha
+    ? landmarks[4].x < landmarks[3].x
+    : landmarks[4].x > landmarks[3].x
+
   const dedosExtendidos = [8, 12, 16, 20].map((punta, i) => {
     const nudillo = [6, 10, 14, 18][i]
+
     return landmarks[punta].y < landmarks[nudillo].y
   })
+
   return [pulgarExtendido, ...dedosExtendidos]
 }

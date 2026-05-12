@@ -48,7 +48,7 @@ eliminarEjercicio: (id) => api.delete(`/admin/ejercicios/${id}`),
 export const authService = {
   registro: (datos) => api.post('/auth/registro', datos),
   login: (datos) => api.post('/auth/login', datos),
-  perfil: () => api.get('/auth/perfil'), // 👈 NUEVO
+  perfil: () => api.get('/auth/perfil'), 
 }
 
 export default api

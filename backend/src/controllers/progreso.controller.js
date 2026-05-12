@@ -28,9 +28,13 @@ const completarLeccion = async (req, res) => {
       where: { usuarioId_leccionId: { usuarioId, leccionId } }
     })
 
-    if (progresoExistente?.completado) {
-      return res.json({ mensaje: 'Lección ya completada anteriormente' })
-    }
+if (progresoExistente?.completado) {
+  return res.json({
+    completadaAntes: true,
+    mensaje: '¡Ya habías completado esta lección! Sigue practicando 🎉',
+    puntos: 0
+  })
+}
 
     await prisma.progresoUsuario.upsert({
       where: { usuarioId_leccionId: { usuarioId, leccionId } },
@@ -41,7 +45,11 @@ const completarLeccion = async (req, res) => {
     await sumarPuntos(usuarioId, leccion.puntosRecompensa)
     await actualizarRacha(usuarioId)
 
-    res.json({ mensaje: '¡Lección completada!', puntos: leccion.puntosRecompensa })
+    res.json({
+  completadaAntes: false,
+  mensaje: '¡Lección completada!',
+  puntos: leccion.puntosRecompensa
+})
   } catch (error) {
     res.status(500).json({ error: 'Error al completar lección' })
   }
