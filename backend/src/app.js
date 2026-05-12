@@ -18,17 +18,10 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-
-    return callback(new Error('Bloqueado por CORS'));
+    console.log("ORIGIN:", origin);
+    callback(null, true);
   },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  credentials: true
 }));
 app.use(cors(...));
 app.options('*', cors());
@@ -40,7 +33,10 @@ app.use('/api/lecciones', leccionesRoutes)
 app.use('/api/progreso', progresoRoutes)
 app.use('/api/ranking', rankingRoutes)
 app.use('/api/admin', adminRoutes)
-
+app.use((req, res, next) => {
+  console.log("REQ:", req.method, req.url);
+  next();
+});
 app.get('/', (req, res) => {
   res.json({ mensaje: '¡Bienvenido a la API de Manitas! 🤙' })
 })
